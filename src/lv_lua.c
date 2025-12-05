@@ -1,5 +1,8 @@
 #include "lv_lua.h"
 
+LV_FONT_DECLARE(lv_font_source_han_sans_sc_16_cjk);
+LV_FONT_DECLARE(lv_font_montserrat_14);
+
 // 全局 Lua 状态机指针，用于在 C 回调中访问 Lua 环境
 static lua_State *GL = NULL;
 
@@ -86,11 +89,6 @@ static int l_scr_act(lua_State *L) {
     return 1;
 }
 
-// lv.btn_create(parent) - 创建按钮 (保留别名)
-static int l_btn_create(lua_State *L) {
-    return l_button_create(L);
-}
-
 // lv.label_create(parent) - 创建标签
 static int l_label_create(lua_State *L) {
     lv_obj_t *parent = NULL;
@@ -141,6 +139,21 @@ static int l_label_set_text(lua_State *L) {
     lv_obj_t *obj = check_lv_obj(L, 1);
     const char *text = luaL_checkstring(L, 2);
     lv_label_set_text(obj, text);
+    return 0;
+}
+
+// obj:set_style_text_font(font, selector) - 设置字体
+static int l_obj_set_style_text_font(lua_State *L) {
+    lv_obj_t *obj = check_lv_obj(L, 1);
+    if (!lua_islightuserdata(L, 2)) {
+        return luaL_error(L, "font expected (lightuserdata)");
+    }
+    const lv_font_t *font = (const lv_font_t *)lua_touserdata(L, 2);
+    lv_style_selector_t selector = 0; 
+    if (lua_gettop(L) >= 3) {
+        selector = (lv_style_selector_t)luaL_checkinteger(L, 3);
+    }
+    lv_obj_set_style_text_font(obj, font, selector);
     return 0;
 }
 
@@ -255,6 +268,7 @@ static const luaL_Reg lv_obj_methods[] = {
     {"set_size", l_obj_set_size},
     {"center", l_obj_center},
     {"set_style_bg_color", l_obj_set_style_bg_color},
+    {"set_style_text_font", l_obj_set_style_text_font},
     {"set_text", l_label_set_text},
     {"set_value", l_bar_set_value},
     {"add_tab", l_tabview_add_tab},
@@ -271,5 +285,13 @@ int luaopen_lvgl(lua_State *L) {
     luaL_setfuncs(L, lv_obj_methods, 0);
     
     luaL_newlib(L, lv_funcs);
+
+    // Register fonts
+    lua_pushlightuserdata(L, (void*)&lv_font_source_han_sans_sc_16_cjk);
+    lua_setfield(L, -2, "font_source_han_sans_sc_16_cjk");
+
+    lua_pushlightuserdata(L, (void*)&lv_font_montserrat_14);
+    lua_setfield(L, -2, "font_montserrat_14");
+
     return 1;
 }

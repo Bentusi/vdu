@@ -31,6 +31,11 @@ function CustomButton:setText(text)
     self.label:center() -- 文字改变后重新居中
 end
 
+-- 设置字体方法
+function CustomButton:setFont(font)
+    self.label:set_style_text_font(font, 0)
+end
+
 -- 绑定点击事件
 function CustomButton:onClick(callback)
     self.btn:add_clicked_cb(callback)

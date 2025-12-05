@@ -19,7 +19,7 @@ int main(int argc, char **argv) {
     // 使用SDL创建窗口
     // lv_conf.h中将宏 LV_USE_SDL 设置为1
     lv_display_t * disp = lv_sdl_window_create(800, 480);
-    lv_display_set_title(disp, "LVGL Lua Simulator");
+    //lv_display_set_title(disp, "LVGL Lua Simulator");
 
     lv_group_t * g = lv_group_create();
     lv_group_set_default(g);
