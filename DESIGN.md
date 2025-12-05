@@ -82,3 +82,5 @@
 ├── lvgl/             # LVGL 库
 └── build/            # 编译输出
 ```
+## 6.依赖
+1. apt install libsdl2-dev make
