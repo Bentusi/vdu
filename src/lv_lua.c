@@ -88,6 +88,7 @@ DEFINE_LV_CREATE(tabview)
 DEFINE_LV_CREATE(textarea)
 DEFINE_LV_CREATE(tileview)
 DEFINE_LV_CREATE(win)
+DEFINE_LV_CREATE(obj)
 
 // lv.scr_act() - 获取当前活动屏幕
 static int l_scr_act(lua_State *L) {
@@ -236,10 +237,11 @@ static void lua_event_cb(lv_event_t * e) {
     }
 }
 
-// obj:add_clicked_cb(func) - 绑定点击事件
-static int l_obj_add_clicked_cb(lua_State *L) {
+// obj:add_event_cb(func, event_code, user_data) - 绑定事件
+static int l_obj_add_event_cb(lua_State *L) {
     lv_obj_t *obj = check_lv_obj(L, 1);
     luaL_checktype(L, 2, LUA_TFUNCTION);
+    int event_code = luaL_checkinteger(L, 3);
     
     // 将 Lua 函数存入 Registry，获取引用
     lua_pushvalue(L, 2);
@@ -250,7 +252,7 @@ static int l_obj_add_clicked_cb(lua_State *L) {
     lv_obj_set_user_data(obj, (void*)(intptr_t)ref);
     
     // 添加 LVGL 事件回调
-    lv_obj_add_event_cb(obj, lua_event_cb, LV_EVENT_CLICKED, NULL);
+    lv_obj_add_event_cb(obj, lua_event_cb, event_code, NULL);
     
     return 0;
 }
@@ -322,6 +324,30 @@ static int l_chart_set_div_line_count(lua_State *L) {
     return 0;
 }
 
+// obj:set_style_transform_rotation(angle) - 0.1 deg units
+static int l_obj_set_style_transform_rotation(lua_State *L) {
+    lv_obj_t *obj = check_lv_obj(L, 1);
+    int32_t angle = luaL_checkinteger(L, 2);
+    lv_obj_set_style_transform_rotation(obj, angle, 0);
+    return 0;
+}
+
+// image:set_rotation(angle) - 0.1 deg units
+static int l_image_set_rotation(lua_State *L) {
+    lv_obj_t *obj = check_lv_obj(L, 1);
+    int32_t angle = luaL_checkinteger(L, 2);
+    lv_image_set_rotation(obj, angle);
+    return 0;
+}
+
+// image:set_src(src)
+static int l_image_set_src(lua_State *L) {
+    lv_obj_t *obj = check_lv_obj(L, 1);
+    const char *src = luaL_checkstring(L, 2);
+    lv_image_set_src(obj, src);
+    return 0;
+}
+
 // --- Timer Support ---
 
 static void lua_timer_cb(lv_timer_t * timer) {
@@ -353,7 +379,7 @@ static int l_timer_create(lua_State *L) {
 }
 
 static int l_timer_delete(lua_State *L) {
-    if (!lua_islightuserdata(L, 1)) return luaL_error(L, "timer expected");
+    if (!lua_islightuserdata(L, 1)) return luaL_error(L, "timer expected (lightuserdata)");
     lv_timer_t * timer = (lv_timer_t *)lua_touserdata(L, 1);
     
     int ref = (int)(intptr_t)lv_timer_get_user_data(timer);
@@ -403,21 +429,63 @@ static const luaL_Reg lv_funcs[] = {
     {"textarea_create", l_textarea_create},
     {"tileview_create", l_tileview_create},
     {"win_create", l_win_create},
+    {"obj_create", l_obj_create},
     {"font_load", l_font_load},
     {"font_free", l_font_free},
     {NULL, NULL}
 };
 
+static int l_obj_align(lua_State *L) {
+    lv_obj_t *obj = *(lv_obj_t **)lua_touserdata(L, 1);
+    int align = luaL_checkinteger(L, 2);
+    int x_ofs = luaL_checkinteger(L, 3);
+    int y_ofs = luaL_checkinteger(L, 4);
+    lv_obj_align(obj, align, x_ofs, y_ofs);
+    return 0;
+}
+
+static int l_obj_set_style_radius(lua_State *L) {
+    lv_obj_t *obj = *(lv_obj_t **)lua_touserdata(L, 1);
+    int value = luaL_checkinteger(L, 2);
+    int selector = luaL_optinteger(L, 3, 0);
+    lv_obj_set_style_radius(obj, value, selector);
+    return 0;
+}
+
+static int l_obj_set_style_border_width(lua_State *L) {
+    lv_obj_t *obj = *(lv_obj_t **)lua_touserdata(L, 1);
+    int value = luaL_checkinteger(L, 2);
+    int selector = luaL_optinteger(L, 3, 0);
+    lv_obj_set_style_border_width(obj, value, selector);
+    return 0;
+}
+
+static int l_obj_set_style_border_color(lua_State *L) {
+    lv_obj_t *obj = *(lv_obj_t **)lua_touserdata(L, 1);
+    int color_hex = luaL_checkinteger(L, 2);
+    int selector = luaL_optinteger(L, 3, 0);
+    lv_obj_set_style_border_color(obj, lv_color_hex(color_hex), selector);
+    return 0;
+}
+
+static int l_obj_remove_flag(lua_State *L) {
+    lv_obj_t *obj = *(lv_obj_t **)lua_touserdata(L, 1);
+    int flag = luaL_checkinteger(L, 2);
+    lv_obj_remove_flag(obj, flag);
+    return 0;
+}
+
 static const luaL_Reg lv_obj_methods[] = {
     {"set_pos", l_obj_set_pos},
     {"set_size", l_obj_set_size},
+    {"align", l_obj_align},
     {"center", l_obj_center},
     {"set_style_bg_color", l_obj_set_style_bg_color},
     {"set_style_text_font", l_obj_set_style_text_font},
     {"set_text", l_label_set_text},
     {"set_value", l_bar_set_value},
     {"add_tab", l_tabview_add_tab},
-    {"add_clicked_cb", l_obj_add_clicked_cb},
+    {"add_event_cb", l_obj_add_event_cb},
     // Chart methods
     {"add_series", l_chart_add_series},
     {"set_next_value", l_chart_set_next_value},
@@ -426,6 +494,16 @@ static const luaL_Reg lv_obj_methods[] = {
     {"set_type", l_chart_set_type},
     {"set_range", l_chart_set_range},
     {"set_div_line_count", l_chart_set_div_line_count},
+    // Image/Style methods
+    {"set_style_transform_rotation", l_obj_set_style_transform_rotation},
+    {"set_rotation", l_image_set_rotation},
+    {"set_src", l_image_set_src},
+    // Border and Radius
+    {"set_style_radius", l_obj_set_style_radius},
+    {"set_style_border_width", l_obj_set_style_border_width},
+    {"set_style_border_color", l_obj_set_style_border_color},
+    // Flags
+    {"remove_flag", l_obj_remove_flag},
     {NULL, NULL}
 };
 
@@ -439,6 +517,25 @@ int luaopen_lvgl(lua_State *L) {
     luaL_setfuncs(L, lv_obj_methods, 0);
     
     luaL_newlib(L, lv_funcs);
+
+    // Register Alignments
+    lua_pushinteger(L, LV_ALIGN_DEFAULT); lua_setfield(L, -2, "ALIGN_DEFAULT");
+    lua_pushinteger(L, LV_ALIGN_TOP_LEFT); lua_setfield(L, -2, "ALIGN_TOP_LEFT");
+    lua_pushinteger(L, LV_ALIGN_TOP_MID); lua_setfield(L, -2, "ALIGN_TOP_MID");
+    lua_pushinteger(L, LV_ALIGN_TOP_RIGHT); lua_setfield(L, -2, "ALIGN_TOP_RIGHT");
+    lua_pushinteger(L, LV_ALIGN_BOTTOM_LEFT); lua_setfield(L, -2, "ALIGN_BOTTOM_LEFT");
+    lua_pushinteger(L, LV_ALIGN_BOTTOM_MID); lua_setfield(L, -2, "ALIGN_BOTTOM_MID");
+    lua_pushinteger(L, LV_ALIGN_BOTTOM_RIGHT); lua_setfield(L, -2, "ALIGN_BOTTOM_RIGHT");
+    lua_pushinteger(L, LV_ALIGN_LEFT_MID); lua_setfield(L, -2, "ALIGN_LEFT_MID");
+    lua_pushinteger(L, LV_ALIGN_RIGHT_MID); lua_setfield(L, -2, "ALIGN_RIGHT_MID");
+    lua_pushinteger(L, LV_ALIGN_CENTER); lua_setfield(L, -2, "ALIGN_CENTER");
+
+    // Register RADIUS_CIRCLE and OBJ_FLAG_SCROLLABLE constants
+    lua_pushinteger(L, LV_RADIUS_CIRCLE); lua_setfield(L, -2, "RADIUS_CIRCLE");
+    lua_pushinteger(L, LV_OBJ_FLAG_SCROLLABLE); lua_setfield(L, -2, "OBJ_FLAG_SCROLLABLE");
+    
+    // Register Events
+    lua_pushinteger(L, LV_EVENT_CLICKED); lua_setfield(L, -2, "EVENT_CLICKED");
 
     // Register fonts
     lua_pushlightuserdata(L, (void*)&lv_font_source_han_sans_sc_16_cjk);

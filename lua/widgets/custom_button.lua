@@ -38,7 +38,7 @@ end
 
 -- 绑定点击事件
 function CustomButton:onClick(callback)
-    self.btn:add_clicked_cb(callback)
+    self.btn:add_event_cb(callback, lv.EVENT_CLICKED, nil)
 end
 
 return CustomButton
