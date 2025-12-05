@@ -1,1 +1,1 @@
-dofile("test_widgets.lua")
+dofile("lua/demo_trend_chart.lua")

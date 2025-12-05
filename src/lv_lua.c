@@ -255,9 +255,119 @@ static int l_obj_add_clicked_cb(lua_State *L) {
     return 0;
 }
 
+// lv.chart_add_series(chart, color, axis)
+static int l_chart_add_series(lua_State *L) {
+    lv_obj_t *chart = check_lv_obj(L, 1);
+    uint32_t color_hex = luaL_checkinteger(L, 2);
+    lv_chart_axis_t axis = LV_CHART_AXIS_PRIMARY_Y;
+    if (lua_gettop(L) >= 3) {
+        axis = (lv_chart_axis_t)luaL_checkinteger(L, 3);
+    }
+    lv_chart_series_t *ser = lv_chart_add_series(chart, lv_color_hex(color_hex), axis);
+    lua_pushlightuserdata(L, ser);
+    return 1;
+}
+
+// lv.chart_set_next_value(chart, series, value)
+static int l_chart_set_next_value(lua_State *L) {
+    lv_obj_t *chart = check_lv_obj(L, 1);
+    if (!lua_islightuserdata(L, 2)) return luaL_error(L, "series expected");
+    lv_chart_series_t *ser = (lv_chart_series_t *)lua_touserdata(L, 2);
+    int value = luaL_checkinteger(L, 3);
+    lv_chart_set_next_value(chart, ser, value);
+    return 0;
+}
+
+// lv.chart_set_point_count(chart, count)
+static int l_chart_set_point_count(lua_State *L) {
+    lv_obj_t *chart = check_lv_obj(L, 1);
+    uint16_t count = (uint16_t)luaL_checkinteger(L, 2);
+    lv_chart_set_point_count(chart, count);
+    return 0;
+}
+
+// lv.chart_set_update_mode(chart, mode)
+static int l_chart_set_update_mode(lua_State *L) {
+    lv_obj_t *chart = check_lv_obj(L, 1);
+    lv_chart_update_mode_t mode = (lv_chart_update_mode_t)luaL_checkinteger(L, 2);
+    lv_chart_set_update_mode(chart, mode);
+    return 0;
+}
+
+// lv.chart_set_type(chart, type)
+static int l_chart_set_type(lua_State *L) {
+    lv_obj_t *chart = check_lv_obj(L, 1);
+    lv_chart_type_t type = (lv_chart_type_t)luaL_checkinteger(L, 2);
+    lv_chart_set_type(chart, type);
+    return 0;
+}
+
+// lv.chart_set_range(chart, axis, min, max)
+static int l_chart_set_range(lua_State *L) {
+    lv_obj_t *chart = check_lv_obj(L, 1);
+    lv_chart_axis_t axis = (lv_chart_axis_t)luaL_checkinteger(L, 2);
+    int min = luaL_checkinteger(L, 3);
+    int max = luaL_checkinteger(L, 4);
+    lv_chart_set_axis_min_value(chart, axis, min);
+    lv_chart_set_axis_max_value(chart, axis, max);
+    return 0;
+}
+
+// lv.chart_set_div_line_count(chart, h_div, v_div)
+static int l_chart_set_div_line_count(lua_State *L) {
+    lv_obj_t *chart = check_lv_obj(L, 1);
+    uint8_t h_div = (uint8_t)luaL_checkinteger(L, 2);
+    uint8_t v_div = (uint8_t)luaL_checkinteger(L, 3);
+    lv_chart_set_div_line_count(chart, h_div, v_div);
+    return 0;
+}
+
+// --- Timer Support ---
+
+static void lua_timer_cb(lv_timer_t * timer) {
+    if (!GL) return;
+    int ref = (int)(intptr_t)lv_timer_get_user_data(timer);
+    if (ref != 0 && ref != LUA_NOREF) {
+        lua_rawgeti(GL, LUA_REGISTRYINDEX, ref);
+        if (lua_isfunction(GL, -1)) {
+            if (lua_pcall(GL, 0, 0, 0) != LUA_OK) {
+                printf("Lua Timer Error: %s\n", lua_tostring(GL, -1));
+                lua_pop(GL, 1);
+            }
+        } else {
+            lua_pop(GL, 1);
+        }
+    }
+}
+
+static int l_timer_create(lua_State *L) {
+    luaL_checktype(L, 1, LUA_TFUNCTION);
+    int period = luaL_checkinteger(L, 2);
+    
+    lua_pushvalue(L, 1);
+    int ref = luaL_ref(L, LUA_REGISTRYINDEX);
+    
+    lv_timer_t * timer = lv_timer_create(lua_timer_cb, period, (void*)(intptr_t)ref);
+    lua_pushlightuserdata(L, timer);
+    return 1;
+}
+
+static int l_timer_delete(lua_State *L) {
+    if (!lua_islightuserdata(L, 1)) return luaL_error(L, "timer expected");
+    lv_timer_t * timer = (lv_timer_t *)lua_touserdata(L, 1);
+    
+    int ref = (int)(intptr_t)lv_timer_get_user_data(timer);
+    luaL_unref(L, LUA_REGISTRYINDEX, ref);
+    
+    lv_timer_delete(timer);
+    return 0;
+}
+
 // --- 模块注册 ---
 
 static const luaL_Reg lv_funcs[] = {
+    {"timer_create", l_timer_create},
+    {"timer_delete", l_timer_delete},
     {"scr_act", l_scr_act},
     {"animimg_create", l_animimg_create},
     {"arc_create", l_arc_create},
@@ -308,6 +418,14 @@ static const luaL_Reg lv_obj_methods[] = {
     {"set_value", l_bar_set_value},
     {"add_tab", l_tabview_add_tab},
     {"add_clicked_cb", l_obj_add_clicked_cb},
+    // Chart methods
+    {"add_series", l_chart_add_series},
+    {"set_next_value", l_chart_set_next_value},
+    {"set_point_count", l_chart_set_point_count},
+    {"set_update_mode", l_chart_set_update_mode},
+    {"set_type", l_chart_set_type},
+    {"set_range", l_chart_set_range},
+    {"set_div_line_count", l_chart_set_div_line_count},
     {NULL, NULL}
 };
 
