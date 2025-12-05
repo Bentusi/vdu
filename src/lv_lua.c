@@ -1,5 +1,10 @@
 #include "lv_lua.h"
+#include "src/libs/tiny_ttf/lv_tiny_ttf.h"
+#include <stdio.h>
+#include <errno.h>
+#include <string.h>
 
+// 中文字体和其他常用字体支持
 LV_FONT_DECLARE(lv_font_source_han_sans_sc_16_cjk);
 LV_FONT_DECLARE(lv_font_montserrat_14);
 
@@ -7,7 +12,7 @@ LV_FONT_DECLARE(lv_font_montserrat_14);
 static lua_State *GL = NULL;
 
 /**
- * @brief 检查栈上指定位置是否为有效的 LVGL 对象
+ * @brief 辅助函数。检查栈上指定位置是否为有效的 LVGL 对象
  * @param L Lua 状态机
  * @param idx 栈索引
  * @return lv_obj_t* LVGL 对象指针
@@ -19,7 +24,7 @@ static lv_obj_t* check_lv_obj(lua_State *L, int idx) {
 }
 
 /**
- * @brief 将 LVGL 对象指针包装为 Lua userdata
+ * @brief 辅助函数。将 LVGL 对象指针包装为 Lua userdata
  * @param L Lua 状态机
  * @param obj LVGL 对象指针
  */
@@ -35,8 +40,9 @@ static void push_lv_obj(lua_State *L, lv_obj_t *obj) {
 }
 
 // --- LVGL API 封装 ---
-
 // 宏定义：生成标准创建函数
+// 根据 lvgl 提供的控件创建函数，生成对应的 Lua 绑定函数
+// lvgl中函数名都如：lv_xxxxx_create
 #define DEFINE_LV_CREATE(name) \
 static int l_##name##_create(lua_State *L) { \
     lv_obj_t *parent = NULL; \
@@ -177,6 +183,33 @@ static int l_tabview_add_tab(lua_State *L) {
     return 1;
 }
 
+// lv.font_load(path, size) - 加载 TTF 字体
+static int l_font_load(lua_State *L) {
+    const char *path = luaL_checkstring(L, 1);
+    int size = luaL_checkinteger(L, 2);
+    
+    lv_font_t *font = lv_tiny_ttf_create_file(path, size);
+    if (!font) {
+        lua_pushnil(L);
+        return 1;
+    }
+    
+    // 返回 lightuserdata，注意：这里没有自动内存管理
+    // 实际项目中应该使用 full userdata 并绑定 __gc 方法调用 lv_tiny_ttf_destroy
+    lua_pushlightuserdata(L, font);
+    return 1;
+}
+
+// lv.font_free(font) - 释放 TTF 字体
+static int l_font_free(lua_State *L) {
+    if (!lua_islightuserdata(L, 1)) {
+        return luaL_error(L, "font expected (lightuserdata)");
+    }
+    lv_font_t *font = (lv_font_t *)lua_touserdata(L, 1);
+    lv_tiny_ttf_destroy(font);
+    return 0;
+}
+
 // --- 事件处理 ---
 
 // 通用 C 回调函数，转发事件给 Lua
@@ -260,6 +293,8 @@ static const luaL_Reg lv_funcs[] = {
     {"textarea_create", l_textarea_create},
     {"tileview_create", l_tileview_create},
     {"win_create", l_win_create},
+    {"font_load", l_font_load},
+    {"font_free", l_font_free},
     {NULL, NULL}
 };
 
@@ -276,6 +311,7 @@ static const luaL_Reg lv_obj_methods[] = {
     {NULL, NULL}
 };
 
+// 模块入口函数
 int luaopen_lvgl(lua_State *L) {
     GL = L; // 保存全局状态机指针
     

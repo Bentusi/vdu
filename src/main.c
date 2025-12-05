@@ -19,7 +19,6 @@ int main(int argc, char **argv) {
     // 使用SDL创建窗口
     // lv_conf.h中将宏 LV_USE_SDL 设置为1
     lv_display_t * disp = lv_sdl_window_create(800, 480);
-    //lv_display_set_title(disp, "LVGL Lua Simulator");
 
     lv_group_t * g = lv_group_create();
     lv_group_set_default(g);
@@ -33,15 +32,16 @@ int main(int argc, char **argv) {
     lv_indev_t * keyboard = lv_sdl_keyboard_create();
     lv_indev_set_group(keyboard, g);
 
-    // Initialize Lua
+    // 初始化 Lua 状态机
     lua_State *L = luaL_newstate();
     luaL_openlibs(L);
     
-    // Register LVGL bindings
+    // 将 LVGL 模块注册到 Lua
+    // lvgl函数定义在 src/lv_lua.c 的 luaopen_lvgl 中
     luaL_requiref(L, "lvgl", luaopen_lvgl, 1);
     lua_pop(L, 1);
 
-    // Run the main script
+    // 运行主脚本
     printf("Loading %s...\n", lua_script);
     if (luaL_dofile(L, lua_script) != LUA_OK) {
         const char *error = lua_tostring(L, -1);
@@ -49,7 +49,7 @@ int main(int argc, char **argv) {
         lua_pop(L, 1);
     }
 
-    // Main loop
+    // 主循环
     while(1) {
         lv_timer_handler();
         usleep(5000);
