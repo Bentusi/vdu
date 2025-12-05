@@ -1,0 +1,27 @@
+# Object files
+*.o
+*.obj
+
+# Executables
+vdu_sim
+*.exe
+*.out
+
+# Libraries
+*.a
+*.so
+*.dll
+*.dylib
+
+# Editor directories and files
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+Thumbs.db
+
+# Build directories (if any future use)
+build/
+bin/
+dist/
