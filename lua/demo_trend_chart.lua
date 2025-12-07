@@ -4,10 +4,6 @@ local TrendChart = require("lua.widgets.trend_chart")
 -- Get active screen
 local scr = lv.scr_act()
 
-local font_cn = nil
-if lv.font_load then font_cn = lv.font_load("simhei.ttf", 24) end
-if not font_cn then font_cn = lv.font_source_han_sans_sc_16_cjk end
-
 -- Create TrendChart using new API
 local chart = TrendChart.new(scr, {
     x = 50, y = 50, width = 700, height = 300,
@@ -18,7 +14,6 @@ local chart = TrendChart.new(scr, {
 local label = lv.label_create(scr)
 label:set_text("趋势图演示 (300 点, 1秒刷新)")
 label:set_pos(50, 10)
-label:set_style_text_font(font_cn, 0)
 
 -- 演示：注册更新事件，以便当有新值时同时更新其它 UI
 chart:on("updated", function(_, value)

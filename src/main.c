@@ -18,7 +18,14 @@ int main(int argc, char **argv) {
 
     // 使用SDL创建窗口
     // lv_conf.h中将宏 LV_USE_SDL 设置为1
-    lv_display_t * disp = lv_sdl_window_create(800, 480);
+    lv_display_t * disp = lv_sdl_window_create(1024, 768);
+
+    //设置全局字体
+    lv_font_t *my_custom_font = lv_tiny_ttf_create_file("simhei.ttf", 24);
+    lv_style_t default_style;
+    lv_style_init(&default_style);
+    lv_style_set_text_font(&default_style, my_custom_font);
+    lv_obj_add_style(lv_scr_act(), &default_style, 0);
 
     lv_group_t * g = lv_group_create();
     lv_group_set_default(g);
@@ -47,6 +54,8 @@ int main(int argc, char **argv) {
         const char *error = lua_tostring(L, -1);
         printf("Lua Error: %s\n", error);
         lua_pop(L, 1);
+        lua_close(L);
+        return -1;
     }
 
     // 主循环
