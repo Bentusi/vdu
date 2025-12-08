@@ -15,10 +15,13 @@ Button.__widget_meta = {
     { name = "y", type = "number", default = 0, label = "Y" },
     { name = "width", type = "number", default = 120, label = "宽度" },
     { name = "height", type = "number", default = 44, label = "高度" },
+    { name = "color", type = "color", default = "#ffffff", label = "文本颜色" },
+    { name = "font_size", type = "number", default = 16, label = "字体大小" },
+    { name = "alignment", type = "string", default = "center", label = "对齐方式" },
     { name = "bg_color", type = "color", default = "#007acc", label = "背景色" },
     { name = "enabled", type = "boolean", default = true, label = "启用" },
   },
-  events = { "pressed", "double_clicked" },
+  events = { "clicked", "single_clicked", "double_clicked" },
 }
 
 -- new(parent, state)
@@ -39,6 +42,7 @@ function Button.new(parent, state)
 
   self.label = lv.label_create(self.btn)
   self.label:set_text(self.props.label)
+  self.label:center()
   
   -- 事件订阅：统一接口 on(event_name, callback)
   -- callback(self, ...) 将在事件触发时被调用
@@ -52,12 +56,21 @@ function Button.new(parent, state)
       end
     end
 
-    -- 处理点击事件
-    if event_name == "pressed" then
+    -- 处理普通点击 (Clicked)
+    if event_name == "clicked" then
       local evt_cb = create_safe_callback()
-      local ev_code = lv.EVENT_PRESSED
-      
-      -- 优先使用对象方法注册（Lua 绑定通常提供 obj:add_event_cb）
+      local ev_code = lv.EVENT_CLICKED
+      if self.btn.add_event_cb then
+        self.btn:add_event_cb(evt_cb, ev_code, nil)
+      elseif lv.obj_add_event_cb then
+        lv.obj_add_event_cb(self.btn, evt_cb, ev_code, nil)
+      end
+    end
+
+    -- 处理单次点击 (Single Clicked - 兼容双击)
+    if event_name == "single_clicked" then
+      local evt_cb = create_safe_callback()
+      local ev_code = lv.EVENT_SINGLE_CLICKED
       if self.btn.add_event_cb then
         self.btn:add_event_cb(evt_cb, ev_code, nil)
       elseif lv.obj_add_event_cb then
