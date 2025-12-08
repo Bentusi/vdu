@@ -1,7 +1,6 @@
 -- widget_template.lua
 -- 模板：演示如何在 Lua 控件中添加元数据与实例 API
 
-local Class = require("core.class")
 local lv = require("lv") -- 假设 lv 绑定在全局或通过 require 可用
 
 local Widget = {}
@@ -11,6 +10,8 @@ Widget.__widget_meta = {
   id = "template_widget",
   name = "Widget Template",
   description = "Template for creating widgets with metadata",
+  schema_version = "1.0",
+  version = "1.0",
   properties = {
     { name = "label", type = "string", default = "Label", label = "文本" },
     { name = "x", type = "number", default = 10, label = "X" },
