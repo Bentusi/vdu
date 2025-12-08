@@ -7,6 +7,8 @@ Valve.__widget_meta = {
     id = "valve",
     name = "Valve",
     description = "旋转阀门控件，可设置角度与尺寸",
+    schema_version = "1.0",
+    version = "1.0",
     properties = {
         { name = "x", type = "number", default = 0, label = "X" },
         { name = "y", type = "number", default = 0, label = "Y" },

@@ -6,6 +6,8 @@ TrendChart.__widget_meta = {
     id = "trend_chart",
     name = "Trend Chart",
     description = "折线/趋势图，可自动刷新数据",
+    schema_version = "1.0",
+    version = "1.0",
     properties = {
         { name = "x", type = "number", default = 0, label = "X" },
         { name = "y", type = "number", default = 0, label = "Y" },

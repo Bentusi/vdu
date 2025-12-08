@@ -7,6 +7,8 @@ Button.__widget_meta = {
   id = "custom_button",
   name = "Custom Button",
   description = "示例按钮，包含 label 与尺寸/位置属性",
+  schema_version = "1.0",
+  version = "1.0",
   properties = {
     { name = "label", type = "string", default = "OK", label = "文本" },
     { name = "x", type = "number", default = 0, label = "X" },
