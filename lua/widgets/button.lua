@@ -18,7 +18,7 @@ Button.__widget_meta = {
     { name = "bg_color", type = "color", default = "#007acc", label = "背景色" },
     { name = "enabled", type = "boolean", default = true, label = "启用" },
   },
-  events = { "clicked" },
+  events = { "pressed", "double_clicked" },
 }
 
 -- new(parent, state)
@@ -43,22 +43,41 @@ function Button.new(parent, state)
   -- 事件订阅：统一接口 on(event_name, callback)
   -- callback(self, ...) 将在事件触发时被调用
   function self.on(self, event_name, callback)
-    if event_name == "clicked" then
-        local function evt_cb(e)
+    -- 定义通用的内部回调处理逻辑
+    local function create_safe_callback()
+      return function(e)
           if not self.props.enabled then return end
           local ok, err = pcall(callback, self)
           if not ok then print("[button] callback error:", err) end
-        end
-        -- 优先使用对象方法注册（Lua 绑定通常提供 obj:add_event_cb）
-        local ev_code = lv.EVENT_CLICKED
-        if lv.EVENT_ALL then ev_code = lv.EVENT_ALL end
-        if self.btn.add_event_cb then
-          self.btn:add_event_cb(evt_cb, ev_code, nil)
-        elseif lv.obj_add_event_cb then
-          -- 回退到可能的全局函数
-          lv.obj_add_event_cb(self.btn, evt_cb, ev_code, nil)
-        end
+      end
     end
+
+    -- 处理点击事件
+    if event_name == "pressed" then
+      local evt_cb = create_safe_callback()
+      local ev_code = lv.EVENT_PRESSED
+      
+      -- 优先使用对象方法注册（Lua 绑定通常提供 obj:add_event_cb）
+      if self.btn.add_event_cb then
+        self.btn:add_event_cb(evt_cb, ev_code, nil)
+      elseif lv.obj_add_event_cb then
+        lv.obj_add_event_cb(self.btn, evt_cb, ev_code, nil)
+      end
+    end
+
+    -- 处理双击事件
+    if event_name == "double_clicked" then
+      local evt_cb = create_safe_callback()
+      local ev_code = lv.EVENT_DOUBLE_CLICKED
+      
+      -- 优先使用对象方法注册（Lua 绑定通常提供 obj:add_event_cb）
+      if self.btn.add_event_cb then
+        self.btn:add_event_cb(evt_cb, ev_code, nil)
+      elseif lv.obj_add_event_cb then
+        lv.obj_add_event_cb(self.btn, evt_cb, ev_code, nil)
+      end
+    end
+
   end
 
   function self.get_property(self, name)

@@ -1,7 +1,7 @@
 -- widget_template.lua
 -- 模板：演示如何在 Lua 控件中添加元数据与实例 API
 
-local lv = require("lv") -- 假设 lv 绑定在全局或通过 require 可用
+local lv = require("lvgl") -- lvgl 绑定在全局或通过 require 可用
 
 local Widget = {}
 

@@ -219,7 +219,7 @@ static void lua_event_cb(lv_event_t * e) {
     
     // 从 user_data 获取 Lua 回调函数的引用 (registry index)
     // 注意：这里假设 user_data 仅用于存储这个引用
-    int ref = (int)(intptr_t)lv_obj_get_user_data(lv_event_get_target(e));
+    int ref = (int)(intptr_t)lv_event_get_user_data(e);
     
     if (ref != 0 && ref != LUA_NOREF) {
         lua_rawgeti(GL, LUA_REGISTRYINDEX, ref); // 获取 Lua 函数
@@ -247,12 +247,8 @@ static int l_obj_add_event_cb(lua_State *L) {
     lua_pushvalue(L, 2);
     int ref = luaL_ref(L, LUA_REGISTRYINDEX);
     
-    // 将引用存入 LVGL 对象的 user_data
-    // 注意：这会覆盖之前存储的任何 user_data
-    lv_obj_set_user_data(obj, (void*)(intptr_t)ref);
-    
-    // 添加 LVGL 事件回调
-    lv_obj_add_event_cb(obj, lua_event_cb, event_code, NULL);
+    // 添加 LVGL 事件回调，将引用作为 user_data 传入
+    lv_obj_add_event_cb(obj, lua_event_cb, event_code, (void*)(intptr_t)ref);
     
     return 0;
 }
@@ -536,6 +532,10 @@ int luaopen_lvgl(lua_State *L) {
     
     // Register Events
     lua_pushinteger(L, LV_EVENT_CLICKED); lua_setfield(L, -2, "EVENT_CLICKED");
+    lua_pushinteger(L, LV_EVENT_DOUBLE_CLICKED); lua_setfield(L, -2, "EVENT_DOUBLE_CLICKED");
+    lua_pushinteger(L, LV_EVENT_VALUE_CHANGED); lua_setfield(L, -2, "EVENT_VALUE_CHANGED");
+    lua_pushinteger(L, LV_EVENT_PRESSED); lua_setfield(L, -2, "EVENT_PRESSED");
+    lua_pushinteger(L, LV_EVENT_RELEASED); lua_setfield(L, -2, "EVENT_RELEASED");
 
     // Register fonts
     lua_pushlightuserdata(L, (void*)&lv_font_source_han_sans_sc_16_cjk);
