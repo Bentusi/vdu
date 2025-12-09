@@ -52,7 +52,7 @@ function TrendChart.new(parent, props)
 
     function self.update(self)
         -- placeholder: generate random value; editor/host can push real data by calling set_property or chart API
-        local val = math.random(self.props.range_min, self.props.range_max)
+        local val = 50 + math.random(self.props.range_min, self.props.range_max)%20
         self.chart:set_next_value(self.series, val)
         for _, cb in ipairs(self._event_listeners.updated) do cb(self, val) end
     end
